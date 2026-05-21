@@ -1,35 +1,43 @@
-
 # ============================================
 # FINANCE TRACKER PRO EDITION
-# Ultra Smooth Optimized Version
+# Fully Fixed & Optimized Stable Version
 # ============================================
 
 # Required Libraries:
 # pip install matplotlib pandas
 
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk, messagebox
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-# ---------------------------
-# APP SETUP
-# ---------------------------
+# ============================================
+# MAIN WINDOW
+# ============================================
+
 root = tk.Tk()
 root.title("FinanceTracker PRO")
 root.geometry("1200x850")
 root.configure(bg="#f3f4f6")
 
-# ---------------------------
+# Prevent UI freezing glitches
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
+
+# ============================================
 # DATA STORAGE
-# ---------------------------
+# ============================================
+
 income = []
 expenses = []
 
 BASE_CURRENCY = "USD"
 
-# Exchange Rates
+# ============================================
+# EXCHANGE RATES
+# ============================================
+
 exchange_rates = {
     "USD": 1,
     "EUR": 0.92,
@@ -38,7 +46,6 @@ exchange_rates = {
     "INR": 83.0
 }
 
-# Currency Options
 currencies = {
     "USD ($)": ("USD", "$"),
     "EUR (€)": ("EUR", "€"),
@@ -49,55 +56,99 @@ currencies = {
 
 selected_currency = tk.StringVar(value="USD ($)")
 
-# ---------------------------
-# SAMPLE GRAPH DATA
-# ---------------------------
+# ============================================
+# SAMPLE CHART DATA
+# ============================================
+
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+
 monthly_income = [3200, 2800, 3500, 2900, 3800, 3400]
 monthly_expenses = [2500, 2200, 2600, 2100, 3000, 2700]
 
-# ---------------------------
+# ============================================
 # HELPER FUNCTIONS
-# ---------------------------
+# ============================================
+
 def convert_from_usd(amount, target_currency):
     return amount * exchange_rates[target_currency]
+
 
 def get_selected_currency():
     return currencies[selected_currency.get()]
 
-# ---------------------------
+
+# ============================================
 # UPDATE SUMMARY
-# ---------------------------
+# ============================================
+
 def update_summary():
 
     currency_code, symbol = get_selected_currency()
 
     total_income_usd = sum(income)
-    total_expenses_usd = sum(item["amount"] for item in expenses)
+
+    total_expenses_usd = sum(
+        item["amount"] for item in expenses
+    )
 
     balance_usd = total_income_usd - total_expenses_usd
 
-    total_income = convert_from_usd(total_income_usd, currency_code)
-    total_expenses = convert_from_usd(total_expenses_usd, currency_code)
-    balance = convert_from_usd(balance_usd, currency_code)
+    total_income = convert_from_usd(
+        total_income_usd,
+        currency_code
+    )
 
-    income_label.config(text=f"{symbol}{total_income:,.2f}")
-    expense_label.config(text=f"{symbol}{total_expenses:,.2f}")
-    balance_label.config(text=f"{symbol}{balance:,.2f}")
+    total_expenses = convert_from_usd(
+        total_expenses_usd,
+        currency_code
+    )
 
-# ---------------------------
-# CURRENCY CHANGE
-# ---------------------------
+    balance = convert_from_usd(
+        balance_usd,
+        currency_code
+    )
+
+    income_label.config(
+        text=f"{symbol}{total_income:,.2f}"
+    )
+
+    expense_label.config(
+        text=f"{symbol}{total_expenses:,.2f}"
+    )
+
+    balance_label.config(
+        text=f"{symbol}{balance:,.2f}"
+    )
+
+    update_charts()
+
+
+# ============================================
+# CURRENCY CHANGED
+# ============================================
+
 def currency_changed(event=None):
-    root.after(1, update_summary)
+    update_summary()
 
-# ---------------------------
+
+# ============================================
 # ADD INCOME
-# ---------------------------
+# ============================================
+
 def add_income():
 
+    amount_text = income_entry.get().strip()
+
+    if amount_text == "":
+        messagebox.showerror(
+            "Error",
+            "Please enter income amount"
+        )
+        return
+
     try:
-        amount = float(income_entry.get())
+
+        amount = float(amount_text)
 
         currency_code, _ = get_selected_currency()
 
@@ -110,27 +161,39 @@ def add_income():
         update_summary()
 
     except ValueError:
+
         messagebox.showerror(
             "Error",
-            "Enter valid income amount"
+            "Please enter a valid number"
         )
 
-# ---------------------------
+
+# ============================================
 # ADD EXPENSE
-# ---------------------------
+# ============================================
+
 def add_expense():
 
+    amount_text = expense_amount_entry.get().strip()
+    category = expense_category_entry.get().strip()
+
+    if amount_text == "":
+        messagebox.showerror(
+            "Error",
+            "Please enter expense amount"
+        )
+        return
+
+    if category == "":
+        messagebox.showerror(
+            "Error",
+            "Please enter expense category"
+        )
+        return
+
     try:
-        amount = float(expense_amount_entry.get())
 
-        category = expense_category_entry.get()
-
-        if category.strip() == "":
-            messagebox.showerror(
-                "Error",
-                "Enter category"
-            )
-            return
+        amount = float(amount_text)
 
         currency_code, _ = get_selected_currency()
 
@@ -147,21 +210,26 @@ def add_expense():
         update_summary()
 
     except ValueError:
+
         messagebox.showerror(
             "Error",
-            "Enter valid expense amount"
+            "Please enter a valid number"
         )
 
-# ---------------------------
-# CREATE CARDS
-# ---------------------------
+
+# ============================================
+# CREATE SUMMARY CARDS
+# ============================================
+
 def create_card(parent, title, color):
 
     frame = tk.Frame(
         parent,
         bg="white",
         width=250,
-        height=120
+        height=120,
+        highlightthickness=1,
+        highlightbackground="#e5e7eb"
     )
 
     frame.pack_propagate(False)
@@ -174,7 +242,7 @@ def create_card(parent, title, color):
         font=("Helvetica", 11, "bold")
     ).pack(pady=(15, 5))
 
-    value = tk.Label(
+    value_label = tk.Label(
         frame,
         text="$0.00",
         bg="white",
@@ -182,13 +250,15 @@ def create_card(parent, title, color):
         font=("Helvetica", 20, "bold")
     )
 
-    value.pack()
+    value_label.pack()
 
-    return frame, value
+    return frame, value_label
 
-# ---------------------------
-# STYLED BUTTONS
-# ---------------------------
+
+# ============================================
+# STYLED BUTTON
+# ============================================
+
 def styled_button(parent, text, command):
 
     return tk.Button(
@@ -196,20 +266,22 @@ def styled_button(parent, text, command):
         text=text,
         command=command,
         bg="#0f172a",
-        fg="black",
+        fg="white",
         activebackground="#1e293b",
-        activeforeground="black",
+        activeforeground="white",
         font=("Helvetica", 10, "bold"),
         relief="flat",
-        padx=12,
-        pady=7,
+        padx=14,
+        pady=8,
         cursor="hand2",
         borderwidth=0
     )
 
-# ---------------------------
+
+# ============================================
 # HEADER
-# ---------------------------
+# ============================================
+
 header = tk.Frame(
     root,
     bg="white",
@@ -235,12 +307,14 @@ currency_menu = ttk.Combobox(
     textvariable=selected_currency,
     values=list(currencies.keys()),
     state="readonly",
-    width=12
+    width=15,
+    font=("Helvetica", 10)
 )
 
 currency_menu.pack(
     side="right",
-    padx=20
+    padx=20,
+    pady=15
 )
 
 currency_menu.bind(
@@ -248,9 +322,10 @@ currency_menu.bind(
     currency_changed
 )
 
-# ---------------------------
+# ============================================
 # DASHBOARD TITLE
-# ---------------------------
+# ============================================
+
 title_frame = tk.Frame(
     root,
     bg="#f3f4f6"
@@ -278,9 +353,10 @@ tk.Label(
     font=("Helvetica", 11)
 ).pack(anchor="w")
 
-# ---------------------------
+# ============================================
 # SUMMARY CARDS
-# ---------------------------
+# ============================================
+
 cards_frame = tk.Frame(
     root,
     bg="#f3f4f6"
@@ -310,9 +386,10 @@ income_card.grid(row=0, column=0, padx=15)
 expense_card.grid(row=0, column=1, padx=15)
 balance_card.grid(row=0, column=2, padx=15)
 
-# ---------------------------
+# ============================================
 # INPUT SECTION
-# ---------------------------
+# ============================================
+
 input_container = tk.Frame(
     root,
     bg="#f3f4f6"
@@ -323,15 +400,18 @@ input_container.pack(pady=20)
 input_frame = tk.Frame(
     input_container,
     bg="white",
-    padx=20,
-    pady=20
+    padx=25,
+    pady=25,
+    highlightthickness=1,
+    highlightbackground="#e5e7eb"
 )
 
 input_frame.pack()
 
-# ---------------------------
+# ============================================
 # INCOME SECTION
-# ---------------------------
+# ============================================
+
 tk.Label(
     input_frame,
     text="Add Income",
@@ -345,14 +425,17 @@ tk.Label(
 
 income_entry = tk.Entry(
     input_frame,
-    width=25,
-    font=("Helvetica", 10)
+    width=28,
+    font=("Helvetica", 11),
+    relief="solid",
+    bd=1
 )
 
 income_entry.grid(
     row=1,
     column=0,
-    pady=10
+    pady=10,
+    padx=(0, 10)
 )
 
 styled_button(
@@ -361,13 +444,13 @@ styled_button(
     add_income
 ).grid(
     row=1,
-    column=1,
-    padx=10
+    column=1
 )
 
-# ---------------------------
+# ============================================
 # EXPENSE SECTION
-# ---------------------------
+# ============================================
+
 tk.Label(
     input_frame,
     text="Add Expense",
@@ -394,14 +477,17 @@ tk.Label(
 
 expense_amount_entry = tk.Entry(
     input_frame,
-    width=25,
-    font=("Helvetica", 10)
+    width=28,
+    font=("Helvetica", 11),
+    relief="solid",
+    bd=1
 )
 
 expense_amount_entry.grid(
     row=4,
     column=0,
-    pady=5
+    pady=5,
+    padx=(0, 10)
 )
 
 tk.Label(
@@ -418,14 +504,17 @@ tk.Label(
 
 expense_category_entry = tk.Entry(
     input_frame,
-    width=25,
-    font=("Helvetica", 10)
+    width=28,
+    font=("Helvetica", 11),
+    relief="solid",
+    bd=1
 )
 
 expense_category_entry.grid(
     row=6,
     column=0,
-    pady=5
+    pady=5,
+    padx=(0, 10)
 )
 
 styled_button(
@@ -439,9 +528,10 @@ styled_button(
     padx=15
 )
 
-# ---------------------------
+# ============================================
 # CHARTS SECTION
-# ---------------------------
+# ============================================
+
 charts_frame = tk.Frame(
     root,
     bg="#f3f4f6"
@@ -456,7 +546,7 @@ charts_frame.pack(
 
 fig = Figure(
     figsize=(10, 5),
-    dpi=80
+    dpi=100
 )
 
 fig.patch.set_facecolor("#f3f4f6")
@@ -476,33 +566,40 @@ canvas_widget.pack(
     expand=True
 )
 
-# ---------------------------
+# ============================================
 # UPDATE CHARTS
-# ---------------------------
+# ============================================
+
 def update_charts():
 
     ax1.clear()
     ax2.clear()
 
-    # LINE GRAPH
+    # Line Graph
     ax1.plot(
         months,
         monthly_income,
         marker="o",
-        linewidth=2
+        linewidth=2,
+        label="Income"
     )
 
     ax1.plot(
         months,
         monthly_expenses,
         marker="o",
-        linewidth=2
+        linewidth=2,
+        label="Expenses"
     )
 
-    ax1.set_title("Income vs Expenses Trend")
+    ax1.set_title(
+        "Income vs Expenses Trend"
+    )
 
-    # PIE CHART
-    if expenses:
+    ax1.legend()
+
+    # Pie Chart
+    if len(expenses) > 0:
 
         df = pd.DataFrame(expenses)
 
@@ -534,11 +631,15 @@ def update_charts():
         "Expenses by Category"
     )
 
-    canvas.draw_idle()
+    fig.tight_layout()
 
-# ---------------------------
+    canvas.draw()
+
+
+# ============================================
 # QUICK ACTIONS
-# ---------------------------
+# ============================================
+
 quick_frame = tk.Frame(
     root,
     bg="#f3f4f6"
@@ -554,7 +655,9 @@ quick_card = tk.Frame(
     quick_frame,
     bg="white",
     padx=20,
-    pady=20
+    pady=20,
+    highlightthickness=1,
+    highlightbackground="#e5e7eb"
 )
 
 quick_card.pack(fill="x")
@@ -578,7 +681,7 @@ actions.pack()
 
 styled_button(
     actions,
-    "View Analytics",
+    "Refresh Analytics",
     update_charts
 ).grid(
     row=0,
@@ -586,13 +689,33 @@ styled_button(
     padx=10
 )
 
-# ---------------------------
-# INITIALIZE
-# ---------------------------
-update_summary()
-update_charts()
+# ============================================
+# ENTER KEY SUPPORT
+# ============================================
 
-# ---------------------------
-# RUN APP
-# ---------------------------
+income_entry.bind(
+    "<Return>",
+    lambda event: add_income()
+)
+
+expense_amount_entry.bind(
+    "<Return>",
+    lambda event: add_expense()
+)
+
+expense_category_entry.bind(
+    "<Return>",
+    lambda event: add_expense()
+)
+
+# ============================================
+# INITIALIZE
+# ============================================
+
+update_summary()
+
+# ============================================
+# RUN APPLICATION
+# ============================================
+
 root.mainloop()
